@@ -16,9 +16,9 @@ scrape_configs:
     labels:
       job: node-example-app
       __path__: /var/log/*log
-#- job_name: node-example-app
-#  static_configs:
-#  - targets: ["node-example-app:8080"]
-#    labels:
-#      job: node-example-app
-#      __path__: /logs/app.log
+- job_name: node-example-app
+  static_configs:
+  - targets: ["node-example-app:8080"]
+    labels:
+      job: node-example-app
+      __path__: /var/log/docker/64c118dadef368550893e21749d665a330c059862690d082085966b76e7f22b6/json.log
