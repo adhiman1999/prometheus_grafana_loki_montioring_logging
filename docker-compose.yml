@@ -1,0 +1,118 @@
+version: "3.8"
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  prometheus_data: {}
+  grafana_data: {}
+
+services:
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    expose:
+      - 9100
+    networks:
+      - monitoring
+  
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    ports:
+      - 9090:9090
+    expose:
+      - 9090
+    networks:
+      - monitoring
+    restart: unless-stopped
+  
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    ports:
+      - 3000:3000
+    expose:
+      - 3000
+    #logging:
+    #  driver: loki
+    #  options:
+    #    loki-url: "http://localhost:3100/loki/api/v1/push"
+    networks:
+      - monitoring
+    restart: unless-stopped
+  
+  loki:
+    image: grafana/loki:2.4.1
+    container_name: loki
+    volumes:
+      - ./loki/config:/etc/loki/config
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/config/config.yml
+    networks:
+      - monitoring
+
+  promtail:
+    image: grafana/promtail:2.4.1
+    container_name: promtail
+    volumes:
+      - /var/log:/var/log
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - monitoring
+ 
+  backend:
+    build:
+      context: .
+      dockerfile: backend/backend.Dockerfile
+    volumes:
+      - ./backend:/backend
+      - /backend/node_modules
+    ports:
+      - "8080:8080"
+    networks:
+      - monitoring
+    image: backend:server
+    container_name: node-example-app
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/frontend.Dockerfile
+    volumes:
+      - ./frontend:/frontend/src/app
+      - /frontend/node_modules
+    ports:
+      - "5000:5000"
+    expose:
+      - 5000
+    networks:
+      - monitoring
+    image: frontend:client
+    working_dir: /frontend/src/app
+    entrypoint: ["npm", "start"]
+    container_name: frontend
+    restart: unless-stopped
