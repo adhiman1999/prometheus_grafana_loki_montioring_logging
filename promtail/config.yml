@@ -16,3 +16,12 @@ scrape_configs:
     labels:
       job: node-example-app
       __path__: /var/log/*log
+
+- job_name: Logs
+  static_configs:
+  - targets:
+      - backend
+    labels:
+      job: node-example-app
+      __path__: /
+

@@ -7,6 +7,8 @@ networks:
 volumes:
   prometheus_data: {}
   grafana_data: {}
+  alertmanager_data: {}
+  backend_log_data: {}
 
 services:
   node-exporter:
@@ -79,6 +81,7 @@ services:
     container_name: promtail
     volumes:
       - /var/log:/var/log
+      - backend_log_data:/var/log
     command: -config.file=/etc/promtail/config.yml
     networks:
       - monitoring
@@ -90,6 +93,7 @@ services:
     volumes:
       - ./backend:/backend
       - /backend/node_modules
+      - backend_log_data:/backend/log
     ports:
       - "8080:8080"
     networks:
