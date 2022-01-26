@@ -1,3 +1,4 @@
+
 server:
   http_listen_port: 9080
   grpc_listen_port: 0
@@ -14,14 +15,12 @@ scrape_configs:
   - targets:
       - localhost
     labels:
-      job: node-example-app
+      job: varLogs
       __path__: /var/log/*log
-
-- job_name: Logs
+- job_name: node-example-app
   static_configs:
   - targets:
-      - backend
+      - localhost
     labels:
       job: node-example-app
-      __path__: /
-
+      __path__: /backend/logs/dev.log

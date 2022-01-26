@@ -2,7 +2,6 @@ version: "3.8"
 
 networks:
   monitoring:
-    driver: bridge
 
 volumes:
   prometheus_data: {}
@@ -81,8 +80,12 @@ services:
     container_name: promtail
     volumes:
       - /var/log:/var/log
-      - backend_log_data:/var/log
+      - ./promtail/:/etc/promtail/
     command: -config.file=/etc/promtail/config.yml
+    volumes_from:
+      - backend
+    links:
+      - backend
     networks:
       - monitoring
  
@@ -93,7 +96,7 @@ services:
     volumes:
       - ./backend:/backend
       - /backend/node_modules
-      - backend_log_data:/backend/log
+      - /backend/log
     ports:
       - "8080:8080"
     networks:
@@ -101,9 +104,11 @@ services:
     logging:
       driver: loki
       options:
-        loki-url: "http://localhost:3100/loki/api/v1/push"
+        loki-url: "http://loki:3100/loki/api/v1/push"
         loki-external-labels: job=backendLogs
     image: backend:server
+    links:
+      - loki
     container_name: node-example-app
     restart: unless-stopped
 
