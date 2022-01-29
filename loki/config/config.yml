@@ -1,29 +1,74 @@
+# --------------------------------------------------------------------------------------------------------------------------------------------------
+# Config Docs available at https://grafana.com/docs/loki/latest/configuration/
+
+# Architechture Docs https://grafana.com/docs/loki/latest/fundamentals/architecture/
+
+# This is a sample local config from https://grafana.com/docs/loki/latest/configuration/examples/#complete-local-configyaml
+
+# Authentication through X-Scope-OrgID header
+# --------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Right now it is set to false so it sets OrgID to "fake"
 auth_enabled: false
 
+# Configures the Loki server
 server:
   http_listen_port: 3100
 
+# Ingester configuration
+#ingester:
+#  lifecycler: # Configures how the lifecycle of the ingester will operate and where it will register for discorvery
+  # More about Ingesters here https://grafana.com/docs/loki/latest/fundamentals/architecture/#ingester
+  # More about Ingester configs here https://grafana.com/docs/loki/latest/configuration/#ingester_config
+#    address: localhost
+#    ring:
+#      kvstore: # Backend storage to use for the hash ring
+#        store: inmemory
+#      replication_factor: 1 # The number of ingesters to write and read from in a distributed system, here using only 1
+#    final_sleep: 0s # Duration to sleep before exiting to ensure metrics are scraped
+#  chunk_idle_period: 5m # How long should chunks sit in-memory with no updates before they are flushed
+#  chunk_retain_period: 30s # How long to keep chunks in memory after they are flushed
 common:
   path_prefix: /loki
-  storage:
-    filesystem:
-      chunks_directory: /loki/chunks
-      rules_directory: /loki/rules
+#  storage:
+#    filesystem:
+#      chunks_directory: /loki/chunks
+#      rules_directory: /loki/rules
   replication_factor: 1
   ring:
     instance_addr: 127.0.0.1
     kvstore:
       store: inmemory # todo peristent logs/ what logs are getting stored
 
-schema_config:
+schema_config: # configures the chunk index schema and where it is tored
   configs:
-    - from: 2020-10-24 # add link to docs
-      store: boltdb-shipper
-      object_store: filesystem
+    - from: 2022-01-27 # the date of the first day that index buckets should be created
+      store: boltdb # which store to use for the index. Either aws, aws-dynamo, gcp, bigtable, bigtable-hashed, cassandra, boltdb or boltdb-shipper
+      object_store: filesystem # which store to use for the chunks. aws, azure, gcp, bigtable, gcs, cassandra, swift or filesystem. If omitted, defaults to the same value as store. 
       schema: v11
-      index:
+      index: # Configures how the index is updated and stored
         prefix: index_
-        period: 24h
+        period: 24h # Table period
 
-ruler:
-  alertmanager_url: http://localhost:9093
+storage_config:
+  boltdb:
+    directory: /tmp/loki/index
+  
+  filesystem:
+    directory: /tmp/loki/chunks
+
+ruler: # Configures the Loki ruler 
+  storage: # Method to use for backend rule storage
+    type: local # Or azure, gcs, s3, swift
+    local:
+      directory: /etc/loki/rules # Directory to store rules
+  rule_path: /loki/rules-temp # File path to store temporary rules files
+  alertmanager_url: http://localhost:9093 # URL to send alerts to
+  enable_alertmanager_discovery: false # Use DNS SRV records to discover alertmanager hosts.
+  ring:
+    kvstore:
+      store: inmemory
+  enable_api: true
+
+
+  

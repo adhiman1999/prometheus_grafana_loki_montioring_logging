@@ -20,7 +20,7 @@ const error_2_counter = new Prometheus.Counter({
 
 app.get('/', (req, res) => {
  console.log('GET /');
- logger('GET /');
+ logger.info('GET /');
 });
 app.get('/hello', (req, res) => {
  const { name = 'you' } = req.query;
@@ -37,7 +37,7 @@ app.get('/hi', (req, res) => {
 /*
     console.log
     console.error
-    console.info
+    console.log
     console.warn
     console.debug
     

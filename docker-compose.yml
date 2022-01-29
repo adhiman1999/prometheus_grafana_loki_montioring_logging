@@ -6,8 +6,6 @@ networks:
 volumes:
   prometheus_data: {}
   grafana_data: {}
-  alertmanager_data: {}
-  backend_log_data: {}
 
 services:
   node-exporter:
@@ -49,9 +47,9 @@ services:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
     environment:
-      - GF_AUTH_DISABLE_LOGIN_FORM=true
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      #- GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
     ports:
       - 3000:3000
     expose:
@@ -69,6 +67,7 @@ services:
     container_name: loki
     volumes:
       - ./loki/config:/etc/loki/config
+      - ./loki/rules:/etc/loki/rules
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/config/config.yml
@@ -95,17 +94,10 @@ services:
       dockerfile: backend/backend.Dockerfile
     volumes:
       - ./backend:/backend
-      - /backend/node_modules
-      - /backend/log
     ports:
       - "8080:8080"
     networks:
       - monitoring
-    logging:
-      driver: loki
-      options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
-        loki-external-labels: job=backendLogs
     image: backend:server
     links:
       - loki
